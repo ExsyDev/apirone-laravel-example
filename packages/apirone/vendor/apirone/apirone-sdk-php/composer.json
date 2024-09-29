@@ -1,0 +1,40 @@
+{
+    "name": "apirone/apirone-sdk-php",
+    "type": "library",
+    "description": "Apirone SDK",
+    "keywords": [
+        "Apirone",
+        "API",
+        "SDK",
+        "crypto",
+        "cryptocurrency",
+        "bitcoin",
+        "btc",
+        "ltc",
+        "doge",
+        "bch"
+    ],
+    "homepage": "https://github.com/Apirone/apirone-sdk-php",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Apirone\\SDK\\": "src"
+        }
+    },
+    "authors": [
+        {
+            "name": "alex",
+            "email": "alex.zaytseff@gmail.com"
+        }
+    ],
+    "config": {
+        "preferred-install": {
+            "apirone/apirone-api-php": "dist"
+        }
+    },
+    "minimum-stability": "RC",
+    "require": {
+        "apirone/apirone-api-php": "^1.0",
+        "apirone/php-qr-code": "^1.0"
+    }
+}

@@ -1,0 +1,23 @@
+{
+    "name": "apirone/php-qr-code",
+    "type": "library",
+    "description": "Generate QR-codes from a single PHP file.",
+    "homepage": "https://github.com/apirone/php-qr-code/",
+    "license": [
+      "MIT"
+    ],
+    "authors": [
+        {
+            "name": "Alex Zaytseff",
+            "email": "alex.zaytseff@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Apirone\\Lib\\PhpQRCode\\": "src/"
+        }
+    },
+    "require": {
+        "ext-gd": "*"
+    }
+}
