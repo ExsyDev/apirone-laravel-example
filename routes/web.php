@@ -2,10 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
+Route::get('/set-currencies', function () {
    $apirone = new \Apirone\ApironeManager();
 
-   $apirone = $apirone->currencies([
+   $apirone = $apirone->setCurrencies([
        [
            'name' => 'tbtc',
            'destination' => '2NCQrj3y5BqRFGHz8zN7RYxhjHj9eGbkTow',
@@ -13,7 +13,9 @@ Route::get('/', function () {
        ]
    ]);
 
-   $apirone->createInvoice('tbtc', 1000);
+    $apirone->createInvoice('tbtc', 1000);
+
+    return "Invoice created";
 });
 
 Route::get('/invoice', function () {
@@ -21,11 +23,11 @@ Route::get('/invoice', function () {
 
     $invoice = \Apirone\Models\Invoice::latest()->first();
 
-    return $apirone->getInvoiceInfo($invoice->invoice);
+    return $apirone->getInvoice($invoice->invoice); //shows invoice info in json
 });
 
 Route::get('/api/callback', function () {
     $manager = new \Apirone\ApironeManager();
 
-    $manager->callbackHandler(); //handle callback
+    $manager->callbackHandler(); //handle callback from apirone
 });

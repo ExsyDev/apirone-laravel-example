@@ -36,13 +36,13 @@ class ApironeManager
     }
 
     /**
-     * Configure currencies and destinations.
+     * Set currencies and destinations.
      *
      * @param array $currencies
      * @return ApironeManager
      * @throws ValidationFailedException
      */
-    public function currencies(array $currencies): ApironeManager
+    public function setCurrencies(array $currencies): ApironeManager
     {
         foreach ($currencies as $currency) {
             if (!isset($currency['name'], $currency['destination'], $currency['fee'])) {
@@ -69,7 +69,7 @@ class ApironeManager
      * @param ?UserData $userData
      * @return Invoice
      */
-    public function createInvoice(string $currency, int $amount, ?UserData $userData = null): Invoice
+    public function createInvoice(string $currency, int $amount, ?UserData $userData = null, ?string $linkback = null): Invoice
     {
         $this->setInvoiceSettings();
 
@@ -82,13 +82,17 @@ class ApironeManager
             $invoice->userData($userData);
         }
 
+        if($linkback) {
+            $invoice->linkback($linkback);
+        }
+
         return $invoice->create();
     }
 
     /**
      * Get invoice info and status
      */
-    public function getInvoiceInfo($invoice, $private = false)
+    public function getInvoice($invoice, $private = false)
     {
         $this->setInvoiceSettings();
 
@@ -124,6 +128,7 @@ class ApironeManager
     }
 
     /**
+     * Initialize logger
      * @return void
      */
     protected function initializeLogger(): void
@@ -136,6 +141,7 @@ class ApironeManager
     }
 
     /**
+     * Initialize settings
      * @return void
      * @throws ValidationFailedException
      * @throws \ReflectionException
@@ -156,6 +162,7 @@ class ApironeManager
     }
 
     /**
+     * Initialize database handler
      * @return void
      */
     protected function initializeDbHandler(): void
@@ -170,6 +177,10 @@ class ApironeManager
         };
     }
 
+    /**
+     * Set invoice settings
+     * @return void
+     */
     private function setInvoiceSettings(): void
     {
         Invoice::db($this->db_handler, config('apirone.table_prefix'));
@@ -177,6 +188,7 @@ class ApironeManager
     }
 
     /**
+     * Execute database query
      * @param string $query
      * @param array $params
      * @return array|bool|int|null

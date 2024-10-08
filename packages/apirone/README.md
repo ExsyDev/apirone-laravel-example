@@ -29,13 +29,13 @@ To install the Apirone Laravel package in your Laravel project, follow these ste
 
 ### Example
 
-#### Create invoice
+#### Set currencies and create invoice
 
 ```php
-Route::get('/invoice', function () {
+Route::get('/create/invoice', function () {
    $apirone = new \Apirone\ApironeManager();
 
-   $apirone = $apirone->currencies([
+   $apirone = $apirone->setCurrencies([
        [
            'name' => 'tbtc',
            'destination' => '2NCQrj3y5BqRFGHz8zN7RYxhjHj9eGbkTow',
@@ -44,6 +44,8 @@ Route::get('/invoice', function () {
    ]);
 
    $apirone->createInvoice('tbtc', 1000);
+   
+   return 'Invoice created';
 });
 ```
 #### Get invoice info
@@ -53,7 +55,7 @@ Route::get('/invoice-info', function () {
 
     $invoice = \Apirone\Models\Invoice::first();
 
-    return $apirone->getInvoiceInfo($invoice->invoice);
+    return $apirone->getInvoice($invoice->invoice);
 });
 ```
 
