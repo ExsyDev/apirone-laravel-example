@@ -10,7 +10,7 @@ To install the Apirone Laravel package in your Laravel project, follow these ste
     composer require apirone/apirone-laravel-package
     ```
 
-2. **Publish the configuration file:**
+2. **Publish the configuration file, migrations and assets:**
 
     ```bash
     php artisan vendor:publish --provider="Apirone\ApironeServiceProvider"
@@ -61,11 +61,9 @@ Route::get('/invoice-info', function () {
 ```php
 Route::get('/api/callback', function () {
     Log::info('Callback received');
-    Log::info(json_encode(request()->all()));
 
-    //do something with the callback data
     $manager = new \Apirone\ApironeManager();
-    $manager->callbackHandler(request()->all()); //will update the invoice status
+    $manager->callbackHandler();
 
     return response()->json(['status' => 'ok']);
 });

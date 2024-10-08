@@ -21,6 +21,6 @@ class Invoice extends Model
 
     public function getTable()
     {
-        return config('apirone.table_prefix') . 'invoice';
+        return config('apirone.table_prefix') . 'apirone_invoice';
     }
 }

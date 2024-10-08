@@ -2,13 +2,12 @@
 
 namespace Apirone;
 
-use Apirone\API\Endpoints\Account;
 use Apirone\API\Exceptions\ValidationFailedException;
-use Apirone\API\Log\LoggerWrapper;
 use Apirone\SDK\Invoice;
 use Apirone\SDK\Model\Settings;
-use Apirone\SDK\Service\Utils;
-use Apirone\Services\InvoiceService;
+use Apirone\SDK\Model\UserData;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
 
 class ApironeManager
 {
@@ -22,23 +21,18 @@ class ApironeManager
      */
     protected string $settingPath;
 
+    protected \Closure $logger;
+
+    protected \Closure $db_handler;
+
     /**
-     * @throws ValidationFailedException
-     * @throws \ReflectionException
+     * @throws \ReflectionException|ValidationFailedException
      */
     public function __construct()
     {
-        $settingsPath = config('apirone.settings_file_path');
-
-        if (!file_exists($settingsPath)) {
-            $this->settings = Settings::init();
-
-            $this->settings->createAccount();
-        } else {
-            $this->settings = Settings::fromFile($settingsPath);
-        }
-
-        $this->settingPath = $settingsPath;
+        $this->initializeSettings();
+        $this->initializeLogger();
+        $this->initializeDbHandler();
     }
 
     /**
@@ -72,30 +66,35 @@ class ApironeManager
      * Create a new invoice.
      * @param string $currency
      * @param int $amount
-     * @return InvoiceService
-     * @throws \ReflectionException
+     * @param ?UserData $userData
+     * @return Invoice
      */
-    public function createInvoice(string $currency, int $amount): InvoiceService
+    public function createInvoice(string $currency, int $amount, ?UserData $userData = null): Invoice
     {
-        $invoiceService = new InvoiceService([
-            'currency' => $currency,
-            'amount' => $amount,
-            'lifetime' => config('apirone.lifetime'),
-            'callback_url' => config('apirone.callback_url'),
-        ], $this->settings->getAccount());
+        $this->setInvoiceSettings();
 
-        return $invoiceService->updateOrCreate();
+        $invoice = Invoice::init($currency, $amount);
+
+        $invoice = $invoice->lifetime(config('apirone.lifetime'));
+        $invoice = $invoice->callbackUrl(config('apirone.callback_url'));
+
+        if($userData) {
+            $invoice->userData($userData);
+        }
+
+        return $invoice->create();
     }
 
     /**
      * Get invoice info and status
-     * @throws ValidationFailedException
      */
     public function getInvoiceInfo($invoice, $private = false)
     {
-        $account = Account::init($this->settings->getAccount());
+        $this->setInvoiceSettings();
 
-        return $account->invoiceInfo($invoice, $private);
+        $invoice = Invoice::getInvoice($invoice);
+
+        return $invoice->info($private);
     }
 
     /**
@@ -105,33 +104,93 @@ class ApironeManager
      */
     public function renderInvoice($invoice)
     {
+        $this->setInvoiceSettings();
+
+        $invoice = Invoice::getInvoice($invoice);
+
         return Invoice::renderLoader($invoice);
     }
 
-    //callback handler
-
     /**
+     * Callback handler
+     * @param callable|null $orderHandler
+     * @return void
      * @throws ValidationFailedException
      * @throws \ReflectionException
      */
-    public function callbackHandler($data = null)
+    public function callbackHandler(callable $orderHandler = null)
     {
-        if(!$data) {
-            return ['status' => 'error', 'message' => 'No data provided'];
+        return Invoice::callbackHandler($orderHandler);
+    }
+
+    /**
+     * @return void
+     */
+    protected function initializeLogger(): void
+    {
+        $this->logger = static function ($level, $message, $context) {
+            file_put_contents(storage_path('logs/apirone.log'), print_r([$level, $message, $context], true) . "\r\n", FILE_APPEND);
+        };
+
+        Invoice::setLogger($this->logger);
+    }
+
+    /**
+     * @return void
+     * @throws ValidationFailedException
+     * @throws \ReflectionException
+     */
+    protected function initializeSettings()
+    {
+        $settingsPath = config('apirone.settings_file_path');
+
+        if (!file_exists($settingsPath)) {
+            $this->settings = Settings::init();
+
+            $this->settings->createAccount();
+        } else {
+            $this->settings = Settings::fromFile($settingsPath);
         }
 
-        if(isset($data['invoice'])) {
-            $invoice = $this->getInvoiceInfo($data['invoice'], true);
-            if($invoice) {
-                return ['status' => 'ok', 'invoice' => $invoice];
+        $this->settingPath = $settingsPath;
+    }
+
+    /**
+     * @return void
+     */
+    protected function initializeDbHandler(): void
+    {
+        $this->db_handler = function ($query) {
+            $query = str_replace('\u', '\\\u', $query);
+            try {
+                return $this->executeQuery($query) ?: true;
+            } catch (QueryException $e) {
+                return $e->getMessage();
             }
+        };
+    }
 
-            return ['status' => 'error', 'message' => 'Invoice not found'];
-        }
+    private function setInvoiceSettings(): void
+    {
+        Invoice::db($this->db_handler, config('apirone.table_prefix'));
+        Invoice::settings($this->settings);
+    }
 
-        $invoice = new InvoiceService($data, $this->settings->getAccount());
-        $invoice->updateOrCreate();
+    /**
+     * @param string $query
+     * @param array $params
+     * @return array|bool|int|null
+     */
+    private function executeQuery(string $query, array $params = []): array|bool|int|null
+    {
+        $queryType = strtoupper(substr(trim($query), 0, 6));
 
-        return ['status' => 'success'];
+        return match ($queryType) {
+            'SELECT' => json_decode(json_encode(DB::select($query, $params)), true),
+            'INSERT' => DB::insert($query, $params),
+            'UPDATE' => DB::update($query, $params),
+            'DELETE' => DB::delete($query, $params),
+            default => throw new \InvalidArgumentException("Unsupported query type: $queryType"),
+        };
     }
 }

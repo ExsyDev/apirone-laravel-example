@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -20,18 +19,13 @@ Route::get('/', function () {
 Route::get('/invoice', function () {
     $apirone = new \Apirone\ApironeManager();
 
-    $invoice = \Apirone\Models\Invoice::first();
+    $invoice = \Apirone\Models\Invoice::latest()->first();
 
     return $apirone->getInvoiceInfo($invoice->invoice);
 });
 
 Route::get('/api/callback', function () {
-    Log::info('Callback received');
-    Log::info(json_encode(request()->all()));
-
-    //do something with the callback data
     $manager = new \Apirone\ApironeManager();
-    $manager->callbackHandler(request()->all()); //will update the invoice status
 
-    return response()->json(['status' => 'ok']);
+    $manager->callbackHandler(); //handle callback
 });

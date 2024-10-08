@@ -28,5 +28,9 @@ class ApironeServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../database/migrations' => database_path('migrations'),
         ], 'migrations');
+
+        $this->publishes([
+            __DIR__.'/../vendor/apirone/apirone-sdk-php/src/assets' => public_path('vendor/apirone'),
+        ], 'public');
     }
 }

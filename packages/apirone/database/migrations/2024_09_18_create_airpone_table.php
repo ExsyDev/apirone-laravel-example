@@ -20,8 +20,6 @@ return new class extends Migration
             $table->json('details')->nullable();
             $table->json('meta')->nullable();
 
-            $table->timestamps();
-
             $table->index('order');
             $table->index('invoice');
         });
