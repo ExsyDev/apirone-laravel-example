@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/set-currencies', function () {
+Route::get('/create/invoice', function () {
    $apirone = new \Apirone\ApironeManager();
 
    $apirone = $apirone->setCurrencies([
